@@ -13,6 +13,7 @@
     "@prisma/client": "^6.11.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "postgres": "^3.4.7",
     "prisma": "^6.11.1"
   }
 }
