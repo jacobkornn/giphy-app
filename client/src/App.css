@@ -1,29 +1,43 @@
-.App {
-  text-align: center;
+.app-container {
+  max-width: 900px;
+  margin: 0 auto;
   padding: 20px;
+  font-family: Arial, sans-serif;
+  text-align: center;
 }
 
-form {
-  margin-bottom: 20px;
+.search-container {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
 }
 
-input {
-  padding: 8px;
-  font-size: 16px;
-}
-
-button {
+.search-input {
+  width: 320px;
   padding: 8px 12px;
   font-size: 16px;
-  margin-left: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.search-button {
+  padding: 8px 16px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  background-color: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+.search-button:hover {
+  background-color: #1d4ed8;
 }
 
 .gif-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.gif-card {
-  margin: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  justify-items: center;
 }

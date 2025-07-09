@@ -31,7 +31,7 @@ app.get('/search', async (req, res) => {
       params: {
         api_key: apiKey,
         q,
-        limit,
+        limit: 100,
         offset,
       },
     });
