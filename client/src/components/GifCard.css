@@ -144,3 +144,19 @@
 .comment-submit-btn:hover {
   background-color: #1d4ed8;
 }
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.comment-timestamp {
+  font-size: 0.8rem;
+  color: #999;
+  white-space: nowrap;
+  margin-left: 1rem;
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import GifCard from './components/GifCard';
 import './App.css';
 
@@ -6,6 +6,10 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [gifs, setGifs] = useState([]);
   const userId = 1; // Simulated logged-in user
+
+  useEffect(() => {
+    console.log(`Logged in user ID: ${userId}`);
+  }, []);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -39,7 +43,7 @@ function App() {
 
       <div className="gif-grid">
         {gifs.map((gif) => (
-          <GifCard key={gif.id} gif={gif} />
+          <GifCard key={gif.id} gif={gif} currentUserId={userId} />
         ))}
       </div>
     </div>

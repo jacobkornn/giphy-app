@@ -28,7 +28,12 @@ async function getComments(req, res) {
     }
     const comments = await prisma.comment.findMany({
       where: { gifId },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { username: true },
+        },
+      },
     });
     res.json(comments);
   } catch (error) {

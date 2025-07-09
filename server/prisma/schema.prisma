@@ -25,6 +25,8 @@ model Rating {
   gifId     String
   value     Int
   createdAt DateTime @default(now())
+
+  @@unique([gifId, userId])
 }
 
 model Comment {

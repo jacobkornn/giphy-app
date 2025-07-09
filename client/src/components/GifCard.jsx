@@ -1,26 +1,105 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaStar, FaRegCommentDots, FaTimes, FaArrowUp } from 'react-icons/fa';
 import './GifCard.css';
 
-const GifCard = ({ gif }) => {
+const GifCard = ({ gif, currentUserId }) => {
   const [hovered, setHovered] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [rating, setRating] = useState(0);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
 
-  const handleStarClick = (value) => {
+  // Fetch user rating on component mount or when gif or user changes
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    async function fetchUserRating() {
+      try {
+        const res = await fetch(`/ratings?gifId=${encodeURIComponent(gif.id)}&userId=${currentUserId}`);
+        if (!res.ok) return;
+        const ratings = await res.json();
+        if (ratings.length > 0) {
+          setRating(ratings[0].value);
+        } else {
+          setRating(0); // no rating found
+        }
+      } catch (error) {
+        console.error('Failed to fetch user rating:', error);
+      }
+    }
+
+    fetchUserRating();
+  }, [gif.id, currentUserId]);
+
+  useEffect(() => {
+    if (showComments) {
+      fetchComments();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showComments]);
+
+  const fetchComments = async () => {
+    try {
+      const res = await fetch(`/comments?gifId=${encodeURIComponent(gif.id)}`);
+      const data = await res.json();
+      setComments(data);
+    } catch (error) {
+      console.error('Failed to fetch comments:', error);
+    }
+  };
+  const handleStarClick = async (value) => {
+    if (!currentUserId) {
+      alert('You must be logged in to submit a rating');
+      return;
+    }
+
     setRating(value);
-    // TODO: send rating to backend
+    console.log('Gif id:', gif.id);
+
+    try {
+      const res = await fetch('/ratings', {  // Use full URL with port!
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gifId: gif.id,
+          value,
+          userId: currentUserId,
+        }),
+      });
+      if (!res.ok) {
+        alert('Failed to submit rating');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Failed to submit rating');
+    }
   };
 
-  const handleCommentSubmit = (e) => {
+
+  const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
 
-    setComments([...comments, commentText.trim()]);
-    setCommentText('');
-    // TODO: send comment to backend
+    try {
+      const res = await fetch('/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gifId: gif.id,
+          text: commentText.trim(),
+          userId: currentUserId || null,
+        }),
+      });
+      if (res.ok) {
+        setCommentText('');
+        fetchComments();
+      } else {
+        alert('Failed to submit comment');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Failed to submit comment');
+    }
   };
 
   return (
@@ -29,11 +108,7 @@ const GifCard = ({ gif }) => {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <img
-        src={gif.images.fixed_height.url}
-        alt={gif.title}
-        className="gif-image"
-      />
+      <img src={gif.images.fixed_height.url} alt={gif.title} className="gif-image" />
 
       {/* Stars bottom-left, show on hover and when comment section not visible */}
       {hovered && !showComments && (
@@ -73,9 +148,15 @@ const GifCard = ({ gif }) => {
 
           <div className="comments-list">
             {comments.length ? (
-              comments.map((c, i) => (
-                <div key={i} className="comment">
-                  {c}
+              comments.map((c) => (
+                <div key={c.id} className="comment">
+                  <div className="comment-header">
+                    <strong>{c.user?.username || 'Anonymous'}</strong>
+                    <span className="comment-timestamp">
+                      {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div>{c.text}</div>
                 </div>
               ))
             ) : (
