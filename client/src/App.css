@@ -1,9 +1,18 @@
+body {
+  margin: 0;
+  background-color: #d1d5db; /* matches empty star & comment icon */
+}
+
 .app-container {
   max-width: 900px;
   margin: 0 auto;
   padding: 20px;
   font-family: Arial, sans-serif;
   text-align: center;
+  background-color: white; /* keep content area white */
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  min-height: 100vh;
 }
 
 .search-container {
@@ -40,4 +49,28 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
   justify-items: center;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 320px;
+  margin: 0 auto;
+  gap: 1rem;
+}
+
+.login-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.login-button {
+  width: 100%;
+  max-width: 150px;
+  /* matches your search-button style */
 }

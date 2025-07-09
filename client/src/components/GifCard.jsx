@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaStar, FaRegCommentDots, FaTimes, FaArrowUp } from 'react-icons/fa';
 import './GifCard.css';
 
-const GifCard = ({ gif, currentUserId }) => {
+const GifCard = ({ gif, currentUserId, token }) => {
   const [hovered, setHovered] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [rating, setRating] = useState(0);
@@ -15,6 +15,7 @@ const GifCard = ({ gif, currentUserId }) => {
 
     async function fetchUserRating() {
       try {
+        // Include userId as query param, no auth needed for GET
         const res = await fetch(`/ratings?gifId=${encodeURIComponent(gif.id)}&userId=${currentUserId}`);
         if (!res.ok) return;
         const ratings = await res.json();
@@ -47,25 +48,28 @@ const GifCard = ({ gif, currentUserId }) => {
       console.error('Failed to fetch comments:', error);
     }
   };
+
   const handleStarClick = async (value) => {
-    if (!currentUserId) {
-      alert('You must be logged in to submit a rating');
+    setRating(value);
+    if (!token) {
+      alert('You must be logged in to rate.');
       return;
     }
 
-    setRating(value);
-    console.log('Gif id:', gif.id);
-
     try {
-      const res = await fetch('/ratings', {  // Use full URL with port!
+      const res = await fetch('/ratings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // <-- send token here
+        },
         body: JSON.stringify({
           gifId: gif.id,
           value,
-          userId: currentUserId,
+          // userId no longer sent; backend uses token to get userId
         }),
       });
+
       if (!res.ok) {
         alert('Failed to submit rating');
       }
@@ -75,19 +79,26 @@ const GifCard = ({ gif, currentUserId }) => {
     }
   };
 
-
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
 
+    if (!token) {
+      alert('You must be logged in to comment.');
+      return;
+    }
+
     try {
       const res = await fetch('/comments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // <-- send token here
+        },
         body: JSON.stringify({
           gifId: gif.id,
           text: commentText.trim(),
-          userId: currentUserId || null,
+          // userId no longer sent; backend uses token to get userId
         }),
       });
       if (res.ok) {
