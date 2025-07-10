@@ -16,4 +16,29 @@ async function login(req, res) {
   res.json({ token, userId: user.id });
 }
 
-module.exports = { login };
+async function register(req, res) {
+  const { username, password } = req.body;
+
+  const existingUser = await prisma.user.findUnique({ where: { username } });
+  if (existingUser) {
+    return res.status(409).json({ error: 'User already exists' });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const user = await prisma.user.create({
+    data: { username, password: hashedPassword },
+  });
+
+  const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+  res.json({ token, userId: user.id });
+}
+
+module.exports = {
+  login,
+  register,
+};
+
+
+
+
