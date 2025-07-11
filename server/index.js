@@ -24,7 +24,7 @@ app.use(express.json());
 
 // app.use('/users', usersRouter);
 // app.use('/ratings', ratingsRouter);
-// app.use('/comments', commentsRouter);
+app.use('/comments', commentsRouter);
 
 app.use('/auth', authRouter);
 
@@ -66,13 +66,21 @@ app.get('/ratings', async (req, res) => {
     return res.status(400).json({ error: 'gifId and userId query params required' });
   }
 
+  const numericUserId = Number(userId);
+  if (isNaN(numericUserId)) {
+    return res.status(400).json({ error: 'userId must be a valid number' });
+  }
+
   try {
     const ratings = await prisma.rating.findMany({
-      where: { gifId, userId },
+      where: {
+        gifId,
+        userId: numericUserId,
+      },
     });
     res.json(ratings);
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching ratings:', err);
     res.status(500).json({ error: 'Failed to fetch ratings' });
   }
 });
@@ -153,6 +161,54 @@ app.post('/comments', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to post comment' });
+  }
+});
+
+// PUT update comment (protected)
+app.put('/comments/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { id } = req.params;
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: "text is required" });
+    }
+
+    const existing = await prisma.comment.findUnique({ where: { id: Number(id) } });
+    if (!existing) return res.status(404).json({ error: "Comment not found" });
+    if (existing.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+
+    const updated = await prisma.comment.update({
+      where: { id: Number(id) },
+      data: { text },
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE comment (protected)
+app.delete('/comments/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { id } = req.params;
+
+    const existing = await prisma.comment.findUnique({ where: { id: Number(id) } });
+    if (!existing) return res.status(404).json({ error: "Comment not found" });
+    if (existing.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+
+    await prisma.comment.delete({
+      where: { id: Number(id) },
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

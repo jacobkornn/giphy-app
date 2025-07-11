@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export function Comments({ gifId, userId }) {
+export function Comments({ gifId, token }) {
   const [comments, setComments] = useState([]);
   const [text, setText] = useState('');
 
@@ -15,9 +15,17 @@ export function Comments({ gifId, userId }) {
 
     const res = await fetch('/comments', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, gifId, text }),
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // send token here
+      },
+      body: JSON.stringify({ gifId, text }), // remove userId from body
     });
+
+    if (!res.ok) {
+      alert('Failed to post comment');
+      return;
+    }
 
     const newComment = await res.json();
     setComments([newComment, ...comments]);

@@ -9,6 +9,7 @@ function authenticateToken(req, res, next) {
 
   jwt.verify(token, JWT_SECRET, (err, payload) => {
     if (err) return res.sendStatus(403);
+    console.log('Token payload:', payload);
     req.user = payload;
     next();
   });

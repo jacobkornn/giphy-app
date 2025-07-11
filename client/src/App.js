@@ -76,6 +76,8 @@ function App() {
         newRatingsByGif[gif.id] = ratingsResults[i];
       });
 
+      //console.log('Fetched ratings:', ratingsResults);
+
       setCommentsByGif(newCommentsByGif);
       setRatingsByGif(newRatingsByGif);
     } catch (error) {

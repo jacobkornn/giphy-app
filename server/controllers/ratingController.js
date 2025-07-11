@@ -27,8 +27,18 @@ async function createRating(req, res) {
       const updated = await prisma.rating.update({
         where: { id: existingRating.id },
         data: { value },
+        include: {
+          user: {
+            select: { id: true, username: true },
+          },
+        },
       });
-      return res.json(updated);
+
+      return res.json({
+        ...updated,
+        userId: updated.userId,
+        user: updated.user,
+      });
     }
 
     // Create new rating
@@ -38,9 +48,18 @@ async function createRating(req, res) {
         value,
         userId,
       },
+      include: {
+        user: {
+          select: { id: true, username: true },
+        },
+      },
     });
 
-    res.status(201).json(rating);
+    res.status(201).json({
+      ...rating,
+      userId: rating.userId,
+      user: rating.user,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
@@ -63,9 +82,21 @@ async function getRatings(req, res) {
 
     const ratings = await prisma.rating.findMany({
       where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { id: true, username: true },
+        },
+      },
     });
 
-    res.json(ratings);
+    const flattened = ratings.map(r => ({
+      ...r,
+      userId: r.userId,
+      user: r.user,
+    }));
+
+    res.json(flattened);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
@@ -89,9 +120,18 @@ async function updateRating(req, res) {
     const updated = await prisma.rating.update({
       where: { id: Number(id) },
       data: { value },
+      include: {
+        user: {
+          select: { id: true, username: true },
+        },
+      },
     });
 
-    res.json(updated);
+    res.json({
+      ...updated,
+      userId: updated.userId,
+      user: updated.user,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
