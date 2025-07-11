@@ -79,23 +79,26 @@ GIPHY_API_KEY="your_giphy_api_key"
 ---
 
 ### 5. Install Prisma, Generate Client, and Apply Migrations
+Run this command from the root directory:
 
 ```bash
-npm install prisma --save-dev && npx prisma generate && npx prisma migrate dev --name init
+cd server; npm install prisma --save-dev; npx prisma generate; npx prisma migrate dev --name init
 ```
 
 ---
 
-### 6. Install Project Dependencies
+### 6. Install Project Dependencies (from root)
+Run this command from the root directory:
 
 ```bash
-npm install
+npm run install-all
 ```
 
 
 ---
 
-### 7. Start the Application
+### 7. Start the Application 
+Run this command from the root directory:
 
 ```bash
 npm start
