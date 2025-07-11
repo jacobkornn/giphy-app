@@ -1,38 +1,103 @@
-# Giphy Search
+# 🎬 Giphy Search
 
-## Overview
-This project is a Giphy search application featuring user authentication, GIF ratings, and comments. It includes a React frontend and an Express backend which communicates with the Giphy API and manages user data in a database.
+## 📝 Overview
+This project is a Giphy search application featuring user authentication, GIF ratings, and comments. It includes a React frontend and an Express backend that communicates with the Giphy API and manages user data in a PostgreSQL database.
 
-## Frontend
+---
+
+## ⚛️ Frontend
+
 - Built with React.
 - Users can search for GIFs through the backend proxy.
 - Supports user login to enable rating and commenting on GIFs.
 - Displays GIFs in a responsive grid with interactive rating stars and comment sections.
 
-## Backend
+---
+
+## 🚀 Backend
+
 - Built with Express and Prisma ORM.
 - Handles user authentication using JWT tokens.
-- Provides endpoints for user login, fetching/posting ratings and comments, and searching GIFs via the Giphy API proxy.
+- Provides endpoints for login, GIF search, and rating/comment features.
+- Interfaces with Supabase-hosted PostgreSQL for user and GIF data.
 
-## Running the Project Locally
-1. Clone the repository
-2. This project uses [Supabase](https://supabase.com/) for PostgreSQL and manages schema locally via [Prisma](https://www.prisma.io/). After creating a database, find your DATABASE_URL, DIRECT_URL connection strings.
+---
 
-3. Install Prisma, Generate Client, Apply Migrations
-      ```bash
-    npm install prisma --save-dev && npx prisma generate && npx prisma migrate dev --name init
-   
-5. Create a .env file in the server directory with:
-      ```bash
-   
-   DATABASE_URL=<your_db_url>
-   DIRECT_URL=<your_direct_url>
-   JWT_SECRET=<your_jwt_secret>
-   GIPHY_API_KEY=<your_giphy_api_key>
+## 🏃‍♂️ Running the Project Locally
 
-6. Install all project dependencies
-   ```bash
-   npm install
-7. Run the project
-   ```bash
-   npm start
+### 1. Clone the Repository
+
+```bash
+git clone <your_repo_url>
+cd giphy-search
+```
+
+---
+
+### 2. Supabase + Prisma Database Setup
+
+This project uses [Supabase](https://supabase.com/) for PostgreSQL and manages the schema locally with [Prisma](https://www.prisma.io/).
+
+Go to your Supabase project and navigate to:
+
+- **Connect → ORMs**
+  - Copy the `DATABASE_URL`
+  - Copy the `DIRECT_URL`
+
+---
+
+### 3. Retrieve API Keys & Secrets
+
+| Key Name        | Description                                                             |
+|-----------------|-------------------------------------------------------------------------|
+| `DATABASE_URL`  | Supabase connection string                                              |
+| `DIRECT_URL`    | Direct admin connection string (Prisma)                                 |
+| `JWT_SECRET`    | Secret used for signing/verifying JWT tokens                            |
+| `GIPHY_API_KEY` | API key from [Giphy Developers](https://developers.giphy.com/explorer/) |
+
+Generate a secure `JWT_SECRET` value locally:
+
+```bash
+openssl rand -hex 32
+```
+
+---
+
+### 4. Create a `.env` File
+
+Create a `.env` file in the `/server` directory and add:
+
+```env
+DATABASE_URL="your_database_url"
+DIRECT_URL="your_direct_url"
+JWT_SECRET="your_jwt_secret"
+GIPHY_API_KEY="your_giphy_api_key"
+```
+
+> 🔒 Ensure `.env` is listed in `.gitignore` to keep secrets secure.
+
+---
+
+### 5. Install Prisma, Generate Client, and Apply Migrations
+
+```bash
+npm install prisma --save-dev && npx prisma generate && npx prisma migrate dev --name init
+```
+
+---
+
+### 6. Install Project Dependencies
+
+```bash
+npm install
+```
+
+
+---
+
+### 7. Start the Application
+
+```bash
+npm start
+```
+
