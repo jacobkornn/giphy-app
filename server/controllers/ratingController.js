@@ -17,13 +17,11 @@ async function createRating(req, res) {
       return res.status(400).json({ error: "userId is required" });
     }
 
-    // Check if user already rated this gif
     const existingRating = await prisma.rating.findFirst({
       where: { userId, gifId }
     });
 
     if (existingRating) {
-      // Update existing rating
       const updated = await prisma.rating.update({
         where: { id: existingRating.id },
         data: { value },
@@ -41,7 +39,6 @@ async function createRating(req, res) {
       });
     }
 
-    // Create new rating
     const rating = await prisma.rating.create({
       data: {
         gifId,
@@ -66,19 +63,46 @@ async function createRating(req, res) {
   }
 }
 
-// Read ratings for a gifId, optionally filtered by userId
+// Read ratings for a gifId or gifIds, optionally filtered by userId
 async function getRatings(req, res) {
   try {
-    const { gifId, userId } = req.query;
+    const { gifId, gifIds, userId } = req.query;
+
+    if (gifIds) {
+      const gifIdArray = gifIds.split(',');
+
+      const ratings = await prisma.rating.findMany({
+        where: {
+          gifId: { in: gifIdArray },
+          ...(userId ? { userId: Number(userId) } : {}),
+        },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: { id: true, username: true },
+          },
+        },
+      });
+
+      const grouped = {};
+      for (const r of ratings) {
+        if (!grouped[r.gifId]) grouped[r.gifId] = [];
+        grouped[r.gifId].push({
+          ...r,
+          userId: r.userId,
+          user: r.user,
+        });
+      }
+
+      return res.json(grouped);
+    }
 
     if (!gifId) {
-      return res.status(400).json({ error: "gifId query param required" });
+      return res.status(400).json({ error: "gifId or gifIds query param required" });
     }
 
     const where = { gifId };
-    if (userId) {
-      where.userId = Number(userId);
-    }
+    if (userId) where.userId = Number(userId);
 
     const ratings = await prisma.rating.findMany({
       where,

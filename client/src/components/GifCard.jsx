@@ -8,19 +8,16 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
   const [rating, setRating] = useState(ratings.length > 0 ? ratings[0].value : 0);
   const [commentText, setCommentText] = useState('');
   const [localComments, setLocalComments] = useState(comments);
-
-  // New state for editing comment:
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [menuOpenForCommentId, setMenuOpenForCommentId] = useState(null);
 
   const commentInputRef = useRef(null);
+  const inactivityTimer = useRef(null);
 
-  // Sync comments prop
   useEffect(() => {
     setLocalComments(comments);
   }, [comments]);
 
-  // Update rating when ratings prop changes
   useEffect(() => {
     if (ratings.length > 0) {
       setRating(ratings[0].value);
@@ -28,6 +25,32 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
       setRating(0);
     }
   }, [ratings]);
+
+  useEffect(() => {
+    return () => {
+      if (inactivityTimer.current) {
+        clearTimeout(inactivityTimer.current);
+      }
+    };
+  }, []);
+
+  const resetInactivityTimer = () => {
+    if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    inactivityTimer.current = setTimeout(() => {
+      setShowComments(false);
+      setEditingCommentId(null);
+      setMenuOpenForCommentId(null);
+      setCommentText('');
+    }, 5000);
+  };
+
+  useEffect(() => {
+    if (showComments) {
+      resetInactivityTimer();
+    } else {
+      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    }
+  }, [showComments]);
 
   const fetchComments = async () => {
     try {
@@ -64,18 +87,15 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
     }
   };
 
-  // Handle left-click to set rating
   const handleStarClick = (value) => {
     submitRating(value);
   };
 
-  // Handle right-click to reset rating to zero
   const handleStarRightClick = (e) => {
-    e.preventDefault(); // Prevent the context menu from showing
+    e.preventDefault();
     submitRating(0);
   };
 
-  // Comment submit (add or update depending on editing state)
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
@@ -86,7 +106,6 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
 
     try {
       if (editingCommentId) {
-        // Update existing comment
         const res = await fetch(`/comments/${editingCommentId}`, {
           method: 'PUT',
           headers: {
@@ -104,7 +123,6 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
           alert('Failed to update comment');
         }
       } else {
-        // Create new comment
         const res = await fetch('/comments', {
           method: 'POST',
           headers: {
@@ -114,8 +132,9 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
           body: JSON.stringify({ gifId: gif.id, text: commentText.trim() }),
         });
         if (res.ok) {
+          const newComment = await res.json();
+          setLocalComments((prev) => [newComment, ...prev]); 
           setCommentText('');
-          fetchComments();
         } else {
           alert('Failed to submit comment');
         }
@@ -126,16 +145,20 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
     }
   };
 
-  // Start editing a comment - fills the input box and sets editingCommentId
   const startEditingComment = (comment) => {
     setEditingCommentId(comment.id);
     setCommentText(comment.text);
     setMenuOpenForCommentId(null);
-    // Focus input after setting text
-    setTimeout(() => commentInputRef.current?.focus(), 0);
+
+    setTimeout(() => {
+      const input = commentInputRef.current;
+      if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length); // place cursor at end
+      }
+    }, 0);
   };
 
-  // Delete a comment
   const deleteComment = async (commentId) => {
     if (!window.confirm('Delete this comment?')) return;
     try {
@@ -160,7 +183,6 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
     }
   };
 
-  // Toggle popup menu for comment
   const toggleMenu = (commentId) => {
     setMenuOpenForCommentId(menuOpenForCommentId === commentId ? null : commentId);
   };
@@ -173,7 +195,6 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
     >
       <img src={gif.images.fixed_height.url} alt={gif.title} className="gif-image" />
 
-      {/* Stars bottom-left */}
       {hovered && !showComments && (
         <div className="stars-container">
           {[1, 2, 3, 4, 5].map((num) => (
@@ -185,14 +206,13 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
                 color: num <= rating ? '#fbbf24' : '#d1d5db',
               }}
               onClick={() => handleStarClick(num)}
-              onContextMenu={handleStarRightClick} // Right-click resets rating
+              onContextMenu={handleStarRightClick}
               title="Left-click to rate, right-click to reset"
             />
           ))}
         </div>
       )}
 
-      {/* Comment icon */}
       {hovered && !showComments && (
         <button
           className="comment-icon"
@@ -203,9 +223,15 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
         </button>
       )}
 
-      {/* Comment section */}
       {showComments && (
-        <div className="comment-section">
+        <div
+          className="comment-section"
+          onClick={resetInactivityTimer}
+          onKeyDown={resetInactivityTimer}
+          onMouseMove={resetInactivityTimer}
+          onFocus={resetInactivityTimer}
+          tabIndex={0}
+        >
           <button
             className="close-comments"
             onClick={() => {
@@ -213,6 +239,7 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
               setEditingCommentId(null);
               setMenuOpenForCommentId(null);
               setCommentText('');
+              if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
             }}
             aria-label="Close comments"
           >
@@ -223,7 +250,10 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
             {localComments.length ? (
               localComments.map((c) => (
                 <div key={c.id} className="comment" style={{ position: 'relative' }}>
-                  <div className="comment-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div
+                    className="comment-header"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
                     <strong>{c.user.username || 'Anonymous'}</strong>
                     <span className="comment-timestamp" style={{ flexShrink: 0 }}>
                       {new Date(c.createdAt).toLocaleTimeString([], {
@@ -232,15 +262,14 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
                       })}
                     </span>
 
-                    {/* The ... button, same width as timestamp, dark text color */}
                     {c.user.id === currentUserId && (
                       <button
                         className="comment-menu-toggle"
                         onClick={() => toggleMenu(c.id)}
                         aria-label="Comment options"
                         style={{
-                          width: '3.2em', // roughly same as timestamp width
-                          color: '#374151', // dark text color (gray-700)
+                          width: '3.2em',
+                          color: '#374151',
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
@@ -254,14 +283,12 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
                     )}
                   </div>
 
-                  {/* Show editing text if this comment is being edited */}
                   {editingCommentId === c.id ? (
                     <em style={{ color: '#6b7280' }}>Editing comment...</em>
                   ) : (
                     <div>{c.text}</div>
                   )}
 
-                  {/* Popup menu */}
                   {menuOpenForCommentId === c.id && (
                     <div
                       className="comment-popup-menu"
@@ -287,7 +314,7 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
-                          color: '#2563eb', // blue-600
+                          color: '#2563eb',
                           fontSize: '1.1em',
                         }}
                       >
@@ -301,7 +328,7 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
-                          color: '#dc2626', // red-600
+                          color: '#dc2626',
                           fontSize: '1.1em',
                         }}
                       >
@@ -316,14 +343,13 @@ const GifCard = ({ gif, currentUserId, token, comments = [], ratings = [] }) => 
             )}
           </div>
 
-          {/* Comment input and submit button used for both new and editing */}
           <form onSubmit={handleCommentSubmit} className="comment-form">
             <input
               type="text"
               ref={commentInputRef}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              placeholder={editingCommentId ? "Edit your comment..." : "Add a comment..."}
+              placeholder={editingCommentId ? 'Edit your comment...' : 'Add a comment...'}
               className="comment-input"
               onKeyDown={(e) => {
                 if (e.key === 'Escape') {

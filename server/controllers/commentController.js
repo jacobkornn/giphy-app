@@ -2,16 +2,20 @@ const prisma = require('../prisma/client');
 
 async function createComment(req, res) {
   try {
-    const { userId, gifId, text } = req.body;
+    const tokenUserId = req.user?.userId;
+    const { userId: bodyUserId, gifId, text } = req.body;
+
     if (!gifId || !text) {
       return res.status(400).json({ error: "gifId and text are required" });
     }
+
+    const userId = tokenUserId || bodyUserId || null;
 
     const comment = await prisma.comment.create({
       data: {
         gifId,
         text,
-        userId: userId || null,
+        userId,
       },
       include: {
         user: {
@@ -20,10 +24,7 @@ async function createComment(req, res) {
       },
     });
 
-    res.status(201).json({
-      ...comment,
-      userId: comment.userId, // ✅ ensure userId is always present in response
-    });
+    res.status(201).json(comment);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
@@ -32,22 +33,50 @@ async function createComment(req, res) {
 
 async function getComments(req, res) {
   try {
-    const { gifId } = req.query;
-    if (!gifId) {
-      return res.status(400).json({ error: "gifId query param required" });
-    }
+    const { gifId, gifIds } = req.query;
 
-    const comments = await prisma.comment.findMany({
-      where: { gifId },
+    const baseQuery = {
       orderBy: { createdAt: 'desc' },
+      where: { userId: { not: null } }, // ✅ exclude orphaned comments
       include: {
         user: {
           select: { id: true, username: true },
         },
       },
+    };
+
+    if (gifIds) {
+      const gifIdArray = gifIds.split(',');
+      const comments = await prisma.comment.findMany({
+        ...baseQuery,
+        where: {
+          ...baseQuery.where,
+          gifId: { in: gifIdArray },
+        },
+      });
+
+      const grouped = {};
+      for (const comment of comments) {
+        const id = comment.gifId;
+        if (!grouped[id]) grouped[id] = [];
+        grouped[id].push({ ...comment, userId: comment.userId });
+      }
+
+      return res.json(grouped);
+    }
+
+    if (!gifId) {
+      return res.status(400).json({ error: "gifId or gifIds query param required" });
+    }
+
+    const comments = await prisma.comment.findMany({
+      ...baseQuery,
+      where: {
+        ...baseQuery.where,
+        gifId,
+      },
     });
 
-    // ✅ Ensure userId is included at top level for every comment
     const withUserIds = comments.map(c => ({
       ...c,
       userId: c.userId,

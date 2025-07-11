@@ -54,42 +54,49 @@ function App() {
       const gifsData = data.data;
       setGifs(gifsData);
 
-      const commentsPromises = gifsData.map((gif) =>
-        fetch(`/comments?gifId=${gif.id}`).then((res) =>
-          res.ok ? res.json() : []
-        )
-      );
-      const ratingsPromises = gifsData.map((gif) =>
-        fetch(`/ratings?gifId=${gif.id}&userId=${userId}`).then((res) =>
-          res.ok ? res.json() : []
-        )
-      );
+      const gifIds = gifsData.map((gif) => gif.id).join(',');
 
-      const commentsResults = await Promise.all(commentsPromises);
-      const ratingsResults = await Promise.all(ratingsPromises);
+      // Fetch comments and ratings in parallel using bulk endpoints
+      const [commentsRes, ratingsRes] = await Promise.all([
+        fetch(`/comments?gifIds=${gifIds}`),
+        fetch(`/ratings?gifIds=${gifIds}&userId=${userId}`)
+      ]);
 
-      const newCommentsByGif = {};
-      const newRatingsByGif = {};
+      if (!commentsRes.ok || !ratingsRes.ok) {
+        console.error('Failed to fetch comments or ratings');
+        return;
+      }
 
-      gifsData.forEach((gif, i) => {
-        newCommentsByGif[gif.id] = commentsResults[i];
-        newRatingsByGif[gif.id] = ratingsResults[i];
+      const commentsData = await commentsRes.json();
+      //console.log('commentsData:', commentsData); 
+      const ratingsData = await ratingsRes.json();
+     //console.log('ratingsData:', ratingsData); 
+
+
+      const groupedComments = commentsData || {};
+      const groupedRatings = {};
+
+      ratingsData.forEach(rating => {
+        if (!groupedRatings[rating.gifId]) {
+          groupedRatings[rating.gifId] = [];
+        }
+        groupedRatings[rating.gifId].push(rating);
       });
 
-      //console.log('Fetched ratings:', ratingsResults);
+      setCommentsByGif(groupedComments);
+      setRatingsByGif(groupedRatings);
 
-      setCommentsByGif(newCommentsByGif);
-      setRatingsByGif(newRatingsByGif);
+      
     } catch (error) {
       console.error('Error fetching GIFs:', error);
     }
   };
 
-  if (!token) {
+  if (!token) { 
     return (
       <div className="app-container">
         <div className="top-bar">
-          <h1 style={{ textAlign: 'center', flex: 1 }}>
+          <h1 style={{ flex: 1, textAlign: 'center' }}>
             {isRegistering ? 'Create Account' : 'Welcome to GIPHY Search'}
           </h1>
         </div>

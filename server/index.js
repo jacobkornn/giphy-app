@@ -59,24 +59,40 @@ app.get('/', (req, res) => {
 
 // Ratings and comments endpoints
 
-// GET RATINGS
+// GET RATINGS - accept gifId or gifIds (comma-separated)
 app.get('/ratings', async (req, res) => {
-  const { gifId, userId } = req.query;
-  if (!gifId || !userId) {
-    return res.status(400).json({ error: 'gifId and userId query params required' });
+  const { gifId, gifIds, userId } = req.query;
+
+  if (!gifId && !gifIds) {
+    return res.status(400).json({ error: 'gifId or gifIds query param required' });
   }
 
-  const numericUserId = Number(userId);
-  if (isNaN(numericUserId)) {
-    return res.status(400).json({ error: 'userId must be a valid number' });
+  let where = {};
+
+  if (gifIds) {
+    const idsArray = gifIds.split(',').map(id => id.trim());
+    where.gifId = { in: idsArray };
+  } else {
+    where.gifId = gifId;
+  }
+
+  if (userId) {
+    const numericUserId = Number(userId);
+    if (isNaN(numericUserId)) {
+      return res.status(400).json({ error: 'userId must be a valid number' });
+    }
+    where.userId = numericUserId;
   }
 
   try {
     const ratings = await prisma.rating.findMany({
-      where: {
-        gifId,
-        userId: numericUserId,
+      where,
+      include: {
+        user: {
+          select: { id: true, username: true },
+        },
       },
+      orderBy: { createdAt: 'desc' },
     });
     res.json(ratings);
   } catch (err) {
@@ -118,16 +134,26 @@ app.post('/ratings', authenticateToken, async (req, res) => {
   }
 });
 
-// GET COMMENTS
+// GET COMMENTS - accept gifId or gifIds (comma-separated)
 app.get('/comments', async (req, res) => {
-  const { gifId } = req.query;
-  if (!gifId) {
-    return res.status(400).json({ error: 'gifId query param required' });
+  const { gifId, gifIds } = req.query;
+
+  if (!gifId && !gifIds) {
+    return res.status(400).json({ error: 'gifId or gifIds query param required' });
+  }
+
+  let where;
+
+  if (gifIds) {
+    const idsArray = gifIds.split(',').map(id => id.trim());
+    where = { gifId: { in: idsArray } };
+  } else {
+    where = { gifId };
   }
 
   try {
     const comments = await prisma.comment.findMany({
-      where: { gifId },
+      where,
       include: { user: true },
       orderBy: { createdAt: 'desc' },
     });
