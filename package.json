@@ -33,7 +33,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently \"npm run start --prefix server\" \"npm run start --prefix client\""
+    "start": "concurrently \"npm run start --prefix server\" \"npm run start --prefix client\"",
+    "install-all": "npm install && npm --prefix client install && npm --prefix server install"
   },
   "repository": {
     "type": "git",
