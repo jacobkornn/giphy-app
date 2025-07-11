@@ -13,7 +13,6 @@ function App() {
   const [gifs, setGifs] = useState([]);
   const [isRegistering, setIsRegistering] = useState(false);
 
-  // States for comments and ratings keyed by gifId
   const [commentsByGif, setCommentsByGif] = useState({});
   const [ratingsByGif, setRatingsByGif] = useState({});
 
@@ -55,7 +54,6 @@ function App() {
       const gifsData = data.data;
       setGifs(gifsData);
 
-      // Fetch comments and ratings for all gifs in parallel:
       const commentsPromises = gifsData.map((gif) =>
         fetch(`/comments?gifId=${gif.id}`).then((res) =>
           res.ok ? res.json() : []
@@ -70,7 +68,6 @@ function App() {
       const commentsResults = await Promise.all(commentsPromises);
       const ratingsResults = await Promise.all(ratingsPromises);
 
-      // Build objects keyed by gif id
       const newCommentsByGif = {};
       const newRatingsByGif = {};
 
@@ -89,7 +86,12 @@ function App() {
   if (!token) {
     return (
       <div className="app-container">
-        <h1>{isRegistering ? 'Create Account' : 'Please Log In'}</h1>
+        <div className="top-bar">
+          <h1 style={{ textAlign: 'center', flex: 1 }}>
+            {isRegistering ? 'Create Account' : 'Welcome to GIPHY Search'}
+          </h1>
+        </div>
+
         <form onSubmit={handleAuth} className="login-form">
           <input
             type="text"
@@ -111,9 +113,11 @@ function App() {
             {isRegistering ? 'Sign Up' : 'Log In'}
           </button>
         </form>
+
         <button
           onClick={() => setIsRegistering(!isRegistering)}
           className="toggle-button"
+          style={{ display: 'block', margin: '10px auto' }}
         >
           {isRegistering ? 'Cancel' : 'Create Account'}
         </button>
@@ -124,9 +128,11 @@ function App() {
   return (
     <div className="app-container">
       <div className="top-bar">
-        <h1>Welcome back, {loggedInUsername}</h1>
+        <h1 style={{ textAlign: 'center', flex: 1 }}>
+          Welcome back, {loggedInUsername}!
+        </h1>
         <button
-          className="signout-button"
+          className="search-button signout-button"
           onClick={() => {
             setToken(null);
             setUserId(null);
@@ -137,23 +143,25 @@ function App() {
             setRatingsByGif({});
           }}
         >
-          <FaUser className="signout-icon" />
+          <FaUser className="signout-icon" style={{ marginRight: '6px' }} />
           <span>Sign Out</span>
         </button>
       </div>
 
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="Search GIFs"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          className="search-input"
-        />
-        <button onClick={handleSearch} className="search-button">
-          Search
-        </button>
+      <div className="search-wrapper">
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="Search GIFs..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            className="search-input"
+          />
+          <button onClick={handleSearch} className="search-button">
+            Search
+          </button>
+        </div>
       </div>
 
       <div className="gif-grid">
