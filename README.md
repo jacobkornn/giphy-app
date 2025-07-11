@@ -27,13 +27,6 @@ This project is a Giphy search application featuring user authentication, GIF ra
 
 ### 1. Clone the Repository
 
-```bash
-git clone <your_repo_url>
-cd giphy-search
-```
-
----
-
 ### 2. Supabase + Prisma Database Setup
 
 This project uses [Supabase](https://supabase.com/) for PostgreSQL and manages the schema locally with [Prisma](https://www.prisma.io/).
